@@ -57,6 +57,7 @@ namespace UnityEditor.Experimental.Rendering.HDPipeline
 
         static Func<BuildTargetGroup, LightmapEncodingQualityCopy> GetLightmapEncodingQualityForPlatformGroup;
         static Action<BuildTargetGroup, LightmapEncodingQualityCopy> SetLightmapEncodingQualityForPlatformGroup;
+        static Func<BuildTargetGroup[]> getBuildTargetGroups;
 
         static HDWizard()
         {
@@ -81,12 +82,36 @@ namespace UnityEditor.Experimental.Rendering.HDPipeline
             var setLightmapEncodingQualityForPlatformGroupLambda = Expression.Lambda<Action<BuildTargetGroup, LightmapEncodingQualityCopy>>(setLightmapEncodingQualityForPlatformGroupBlock, buildTargetGroupParameter, qualityParameter);
             GetLightmapEncodingQualityForPlatformGroup = getLightmapEncodingQualityForPlatformGroupLambda.Compile();
             SetLightmapEncodingQualityForPlatformGroup = setLightmapEncodingQualityForPlatformGroupLambda.Compile();
+
+            Type buildPlatformsType = playerSettingsType.Assembly.GetType("UnityEditor.Build.BuildPlatforms");
+            Type buildPlatformType = playerSettingsType.Assembly.GetType("UnityEditor.Build.BuildPlatform");
+            Type buildPlatformListType = typeof(System.Collections.Generic.List<>).MakeGenericType(buildPlatformType);
+            Type buildTargetGroupListType = typeof(System.Collections.Generic.List<>).MakeGenericType(typeof(BuildTargetGroup));
+            var buildPlatformListVariable = Expression.Variable(buildPlatformListType, "buildPlatforms");
+            var buildTargetGroupListVariable = Expression.Variable(buildTargetGroupListType, "buildTargetGroups");
+            var buildPlatformsInstanceInfo = buildPlatformsType.GetProperty("instance", BindingFlags.Static | BindingFlags.Public);
+            var getValidPlatformsInfo = buildPlatformsType.GetMethod("GetValidPlatforms", BindingFlags.Public, null, new[] { typeof(bool) }, null);
+            var toArrayInfo = buildPlatformsType.GetMethod("ToArray", BindingFlags.Public);
+            var buildPlatformsInstanceProperty = Expression.Property(null, buildPlatformsInstanceInfo);
+            var innerLambdaParameter = Expression.Parameter(buildPlatformType, "x");
+            var lambdaBody = Expression.Field(innerLambdaParameter, "targetGroup");
+            //var lambda = Expression.Lambda(innerLambdaParameter, lambdaBody);
+            var getBuildTargetGroupsBlock = Expression.Block(
+                new[] { buildPlatformListVariable, buildTargetGroupListVariable },
+                Expression.Assign(buildPlatformListVariable, Expression.Call(buildPlatformsInstanceProperty, getValidPlatformsInfo, Expression.Constant(true)))//,
+                //Expression.Assign(buildTargetGroupListVariable, Expression.Call(typeof(Enumerable), "Select", new Type[] { buildPlatformType, typeof(BuildTargetGroup) }, buildPlatformListVariable, lambdaBody)),
+                //Expression.Call(buildTargetGroupListVariable, toArrayInfo)
+                );
+            //var getBuildTargetGroupsLambda = Expression.Lambda<Func<BuildTargetGroup[]>>(setLightmapEncodingQualityForPlatformGroupBlock);
+            //getBuildTargetGroups = getBuildTargetGroupsLambda.Compile();
+            //BuildPlatforms.instance.GetValidPlatforms(true).ToArray();
         }
 
         [MenuItem("Window/Analysis/HDRP Wizard", priority = 113)]
         static void OpenWindow()
         {
             var window = GetWindow<HDWizard>("HDRP Wizard");
+            
         }
 
         void OnGUI()
@@ -149,6 +174,11 @@ namespace UnityEditor.Experimental.Rendering.HDPipeline
             if (GUI.Button(resolveRect, button, EditorStyles.miniButton))
                 resolver();
         }
+
+        //T CreateOrLoad<T>(GUIContent label)
+        //{
+
+        //}
 
         bool allTester() =>
             colorSpaceTester()
@@ -288,5 +318,8 @@ namespace UnityEditor.Experimental.Rendering.HDPipeline
                 hdrpAssetUsedResolver();
             //ask to use one or create one
         }
+
+        bool defaultVolumeProfileTester() => PlayerSettings.colorSpace == ColorSpace.Linear;
+        void defaultVolumeProfileResolver() => PlayerSettings.colorSpace = ColorSpace.Linear;
     }
 }
