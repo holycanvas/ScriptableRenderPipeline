@@ -392,7 +392,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2421656174400141534}
   m_Layer: 0
-  m_Name: Root
+  m_Name: DefaultSceneRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -460,7 +460,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b9a305e18de0c04dbd257a21cd47087, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sharedProfile: {fileID: 11400000, guid: c9e6f61a1b4dbb843b3dc106723a80bb, type: 2}
+  sharedProfile: {fileID: 11400000, guid: cf9a968c7c5fdad4d91a538548383802, type: 2}
   isGlobal: 1
   blendDistance: 0
   weight: 1
